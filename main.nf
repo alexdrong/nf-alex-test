@@ -1,65 +1,39 @@
 #!/usr/bin/env nextflow
- 
+
+/*mamba create -n modbam2bed -c bioconda -c conda-forge -c epi2melabs modbam2bed
+*modbam2bed [OPTION...] <reference.fasta> <reads.bam>  
+*/
+
 /*
  * The following pipeline parameters specify the reference genomes
  * and read pairs and can be provided as command line options
- */
-params.reads = "$baseDir/data/ggal/ggal_gut_{1,2}.fq"
-params.transcriptome = "$baseDir/data/ggal/ggal_1_48850000_49020000.Ggal71.500bpflank.fa"
+*/ 
+params.reads = "data/bonito_10k.bam"
+params.bai = "data/bonito_10k.bam.bai"
+params.reference = "data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna"
 params.outdir = "results"
  
 workflow {
-    read_pairs_ch = channel.fromFilePairs( params.reads, checkIfExists: true )
- 
-    INDEX(params.transcriptome)
-    FASTQC(read_pairs_ch)
-    QUANT(INDEX.out, read_pairs_ch)
+    def reads_ch = Channel.fromPath(params.reads, checkIfExists: true )
+    def bai_ch = Channel.fromPath(params.bai, checkIfExists: true )
+    def ref_ch = Channel.fromPath(params.reference, checkIfExists: true )
+    MODBAM2BED(ref_ch, reads_ch, bai_ch)
 }
  
-process INDEX {
-    tag "$transcriptome.simpleName"
- 
-    input:
-    path transcriptome
- 
-    output:
-    path 'index'
- 
-    script:
-    """
-    salmon index --threads $task.cpus -t $transcriptome -i index
-    """
-}
- 
-process FASTQC {
-    tag "FASTQC on $sample_id"
+process MODBAM2BED {
+    conda 'envs/modbam2bed.yml'
     publishDir params.outdir
  
     input:
-    tuple val(sample_id), path(reads)
+    path reference
+    path reads
+    path bai
  
     output:
-    path "fastqc_${sample_id}_logs"
+    path "modbam.bed"
  
     script:
     """
-    fastqc.sh "$sample_id" "$reads"
-    """
-}
- 
-process QUANT {
-    tag "$pair_id"
-    publishDir params.outdir
- 
-    input:
-    path index
-    tuple val(pair_id), path(reads)
- 
-    output:
-    path pair_id
- 
-    script:
-    """
-    salmon quant --threads $task.cpus --libType=U -i $index -1 ${reads[0]} -2 ${reads[1]} -o $pair_id
+    modbam2bed $reference $reads > "modbam.bed"
     """
 }
