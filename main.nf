@@ -8,11 +8,19 @@
  * The following pipeline parameters specify the reference genomes
  * and read pairs and can be provided as command line options
 */ 
+
+/*
 params.reads = "data/bonito_10k.bam"
 params.bai = "data/bonito_10k.bam.bai"
 params.reference = "data/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna"
 params.outdir = "results"
- 
+ */
+
+params.reads = "gs://rome-public-data/ont-open/basecalling/bonito_remora/Benchmarking_ASmethylation_COLO829_1-5/COLO829_1/bonito_calls.bam"
+params.bai = "gs://rome-public-data/ont-open/basecalling/bonito_remora/Benchmarking_ASmethylation_COLO829_1-5/COLO829_1/bonito_calls.bam.bai"
+params.reference = "gs://rome-public-data/ont-open/config/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna"
+params.outdir = "results"
+
 workflow {
     def reads_ch = Channel.fromPath(params.reads, checkIfExists: true )
     def bai_ch = Channel.fromPath(params.bai, checkIfExists: true )
